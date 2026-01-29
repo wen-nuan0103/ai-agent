@@ -33,7 +33,7 @@ public class RedisChatMemory implements ChatMemory {
         String key = getKey(conversationId);
         ChatMemoryEntry entry = new ChatMemoryEntry(
                 message.getMessageType().getValue(),
-                message.getContent()
+                message.getText()
         );
         redisTemplate.opsForList().rightPush(key, entry);
         redisTemplate.expire(key, DEFAULT_TTL);
@@ -44,12 +44,13 @@ public class RedisChatMemory implements ChatMemory {
         if (messages == null || messages.isEmpty()) return;
         String key = getKey(conversationId);
         List<ChatMemoryEntry> entries = messages.stream()
-                .map(msg -> new ChatMemoryEntry(msg.getMessageType().getValue(), msg.getContent()))
+                .map(msg -> new ChatMemoryEntry(msg.getMessageType().getValue(), msg.getText()))
                 .toList();
 
         redisTemplate.opsForList().rightPushAll(key, entries.toArray());
         redisTemplate.expire(key, DEFAULT_TTL);
     }
+
 
     @Override
     public List<Message> get(String conversationId, int lastN) {

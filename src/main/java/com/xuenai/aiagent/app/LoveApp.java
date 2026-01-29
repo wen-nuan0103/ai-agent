@@ -5,10 +5,13 @@ import com.xuenai.aiagent.chatmemory.RedisChatMemory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;
+import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
@@ -23,6 +26,8 @@ import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvis
 public class LoveApp {
 
     private final ChatClient chatClient;
+    private VectorStore vectorStore;
+    private Advisor cloudAdvisor;
 
     @Value("classpath:prompts/love_gentle.st")
     private Resource gentleResource;
@@ -38,7 +43,8 @@ public class LoveApp {
             引导用户详述事情经过、对方反应及自身想法，以便给出专属解决方案。
             """;
 
-    public LoveApp(ChatModel dashscopeChatModel, RedisChatMemory redisChatMemory) {
+    public LoveApp(ChatModel dashscopeChatModel, RedisChatMemory redisChatMemory,
+                   VectorStore loveAppVectorStore, Advisor loveAppCloudAdvisor) {
         chatClient = ChatClient.builder(dashscopeChatModel)
                 .defaultSystem(SYSTEM_PROMPT)
                 .defaultAdvisors(
@@ -46,6 +52,8 @@ public class LoveApp {
                         new MessageChatMemoryAdvisor(redisChatMemory)
                 )
                 .build();
+        this.vectorStore = loveAppVectorStore;
+        this.cloudAdvisor = loveAppCloudAdvisor;
     }
 
     public String chat(String userMessage) {
@@ -56,7 +64,7 @@ public class LoveApp {
                                 .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100)
                 )
                 .call().chatResponse();
-        String content = response.getResult().getOutput().getContent();
+        String content = response.getResult().getOutput().getText();
         return content;
     }
 
@@ -67,7 +75,7 @@ public class LoveApp {
                 "user_status", userStatus
         ));
         return chatClient.prompt()
-                .system(systemMessage.getContent())
+                .system(systemMessage.getText())
                 .user(userMessage)
                 .advisors(spec ->
                         spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, "love:" + userName)
@@ -76,6 +84,30 @@ public class LoveApp {
                 .call()
                 .content();
 
+    }
+
+    public String chatWithRag(String userMessage) {
+        ChatResponse response = chatClient
+                .prompt()
+                .user(userMessage)
+                .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, "love")
+                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100))
+                .advisors(new QuestionAnswerAdvisor(vectorStore))
+                .call()
+                .chatResponse();
+        return response.getResult().getOutput().getText();
+    }
+
+    public String chatWithCloudRag(String userMessage) {
+        ChatResponse response = chatClient
+                .prompt()
+                .user(userMessage)
+                .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, "love")
+                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100))
+                .advisors(cloudAdvisor)
+                .call()
+                .chatResponse();
+        return response.getResult().getOutput().getText();
     }
 
 }

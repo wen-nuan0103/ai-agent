@@ -18,7 +18,7 @@ class AiAgentApplicationTests {
         AssistantMessage output = dashscopeChatModel.call(new Prompt("你是谁"))
                 .getResult()
                 .getOutput();
-        System.out.println(output.getContent());
+        System.out.println(output.getText());
     }
 
 }

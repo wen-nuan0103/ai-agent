@@ -4,8 +4,6 @@ import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 @SpringBootTest
 class LoveAppTest {
     
@@ -22,4 +20,12 @@ class LoveAppTest {
         System.out.println(answer);
 
     }
+
+    @Test
+    void doChatWithRag() {
+        String message = "有没有女朋友可以介绍一下，我 24岁，没有太多要求，喜欢二次元，最好在江浙沪";
+        String answer =  loveApp.chatWithRag(message);
+        System.out.println(answer);
+    }
+
 }
