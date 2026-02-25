@@ -3,6 +3,10 @@ spring:
     name: ai-agent
   profiles:
     active: local
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ai_agent
+    username: postgres
+    password: 123456
   data:
     redis:
       host: localhost

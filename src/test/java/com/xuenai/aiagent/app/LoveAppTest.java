@@ -23,7 +23,7 @@ class LoveAppTest {
 
     @Test
     void doChatWithRag() {
-        String message = "有没有女朋友可以介绍一下，我 24岁，没有太多要求，喜欢二次元，最好在江浙沪";
+        String message = "有没有女朋友可以介绍一下，我 24岁，没有太多要求，喜欢二次元，最好在江浙沪，如果有，请给我信息";
         String answer =  loveApp.chatWithRag(message);
         System.out.println(answer);
     }

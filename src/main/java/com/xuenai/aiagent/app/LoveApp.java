@@ -4,7 +4,6 @@ import com.xuenai.aiagent.advisor.ForbidWordAdvisor;
 import com.xuenai.aiagent.chatmemory.RedisChatMemory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.messages.Message;
@@ -48,8 +47,8 @@ public class LoveApp {
         chatClient = ChatClient.builder(dashscopeChatModel)
                 .defaultSystem(SYSTEM_PROMPT)
                 .defaultAdvisors(
-                        new ForbidWordAdvisor(),
-                        new MessageChatMemoryAdvisor(redisChatMemory)
+                        new ForbidWordAdvisor()
+//                        new MessageChatMemoryAdvisor(redisChatMemory)
                 )
                 .build();
         this.vectorStore = loveAppVectorStore;
