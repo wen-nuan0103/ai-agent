@@ -10,6 +10,7 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -27,6 +28,8 @@ public class LoveApp {
     private final ChatClient chatClient;
     private VectorStore vectorStore;
     private Advisor cloudAdvisor;
+    
+    private ToolCallback[] allTools;
 
     @Value("classpath:prompts/love_gentle.st")
     private Resource gentleResource;
@@ -43,7 +46,7 @@ public class LoveApp {
             """;
 
     public LoveApp(ChatModel dashscopeChatModel, RedisChatMemory redisChatMemory,
-                   VectorStore loveAppVectorStore, Advisor loveAppCloudAdvisor) {
+                   VectorStore loveAppVectorStore, Advisor loveAppCloudAdvisor, ToolCallback[] allTools) {
         chatClient = ChatClient.builder(dashscopeChatModel)
                 .defaultSystem(SYSTEM_PROMPT)
                 .defaultAdvisors(
@@ -53,6 +56,7 @@ public class LoveApp {
                 .build();
         this.vectorStore = loveAppVectorStore;
         this.cloudAdvisor = loveAppCloudAdvisor;
+        this.allTools = allTools;
     }
 
     public String chat(String userMessage) {
@@ -108,5 +112,22 @@ public class LoveApp {
                 .chatResponse();
         return response.getResult().getOutput().getText();
     }
+
+
+
+    public String doChatWithTools(String message, String chatId) {
+        ChatResponse response = chatClient
+                .prompt()
+                .user(message)
+                .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId)
+                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 10))
+                .tools(allTools)
+                .call()
+                .chatResponse();
+        String content = response.getResult().getOutput().getText();
+        log.info("content: {}", content);
+        return content;
+    }
+
 
 }
