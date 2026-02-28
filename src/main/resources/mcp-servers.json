@@ -9,7 +9,9 @@
         "-jar",
         "image-search-mcp/target/image-search-mcp-0.0.1.jar"
       ],
-      "env": {}
+      "env": {
+        "number": "5"
+      }
     }
   }
 }
