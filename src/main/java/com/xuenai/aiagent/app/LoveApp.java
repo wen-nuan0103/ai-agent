@@ -11,6 +11,7 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -28,8 +29,8 @@ public class LoveApp {
     private final ChatClient chatClient;
     private VectorStore vectorStore;
     private Advisor cloudAdvisor;
-    
     private ToolCallback[] allTools;
+    private ToolCallbackProvider toolCallbackProvider;
 
     @Value("classpath:prompts/love_gentle.st")
     private Resource gentleResource;
@@ -46,9 +47,10 @@ public class LoveApp {
             """;
 
     public LoveApp(ChatModel dashscopeChatModel, RedisChatMemory redisChatMemory,
-                   VectorStore loveAppVectorStore, Advisor loveAppCloudAdvisor, ToolCallback[] allTools) {
+                   VectorStore loveAppVectorStore, Advisor loveAppCloudAdvisor, ToolCallback[] allTools,
+                   ToolCallbackProvider toolCallbackProvider) {
         chatClient = ChatClient.builder(dashscopeChatModel)
-                .defaultSystem(SYSTEM_PROMPT)
+//                .defaultSystem(SYSTEM_PROMPT)
                 .defaultAdvisors(
                         new ForbidWordAdvisor()
 //                        new MessageChatMemoryAdvisor(redisChatMemory)
@@ -57,6 +59,7 @@ public class LoveApp {
         this.vectorStore = loveAppVectorStore;
         this.cloudAdvisor = loveAppCloudAdvisor;
         this.allTools = allTools;
+        this.toolCallbackProvider = toolCallbackProvider;
     }
 
     public String chat(String userMessage) {
@@ -129,5 +132,18 @@ public class LoveApp {
         return content;
     }
 
+    public String doChatWithMcp(String message) {
+        ChatResponse response = chatClient
+                .prompt()
+                .user(message)
+                .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, "love")
+                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 10))
+                .tools(toolCallbackProvider)
+                .call()
+                .chatResponse();
+        String content = response.getResult().getOutput().getText();
+        log.info("content: {}", content);
+        return content;
+    }
 
 }

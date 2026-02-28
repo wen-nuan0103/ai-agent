@@ -28,4 +28,11 @@ class LoveAppTest {
         System.out.println(answer);
     }
 
+    @Test
+    void doChatWithMcp() {
+        String message = "帮我搜索一些好看的图片";
+        String answer =  loveApp.doChatWithMcp(message);
+        System.out.println(answer);
+    }
+
 }

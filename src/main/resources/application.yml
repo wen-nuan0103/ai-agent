@@ -18,6 +18,15 @@ spring:
           max-idle: 8
           min-idle: 0
           max-wait: 10000
+  ai:
+    mcp:
+      client:
+        stdio:
+          servers-configuration: classpath:mcp-servers.json
+#        sse:
+#          connections:
+#            server1:
+#              url: http://localhost:8127
 server:
   port: 8123
   servlet:
