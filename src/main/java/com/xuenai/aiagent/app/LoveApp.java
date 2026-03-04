@@ -16,6 +16,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 
 import java.util.Map;
 
@@ -62,16 +63,28 @@ public class LoveApp {
         this.toolCallbackProvider = toolCallbackProvider;
     }
 
-    public String chat(String userMessage) {
+    public String chat(String userMessage,String chatId) {
         ChatResponse response = chatClient.prompt()
                 .user(userMessage)
                 .advisors(spec ->
-                        spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, "love")
+                        spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId)
                                 .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100)
                 )
                 .call().chatResponse();
         String content = response.getResult().getOutput().getText();
         return content;
+    }
+    
+    public Flux<String> chatWithStream(String userMessage,String chatId) {
+        return chatClient.prompt()
+                .user(userMessage)
+                .advisors(spec ->
+                        spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId)
+                                .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100)
+                )
+//                .advisors(new QuestionAnswerAdvisor(vectorStore))
+                .stream()
+                .content();
     }
 
     public String chat(String userMessage, String userName, String userStatus) {

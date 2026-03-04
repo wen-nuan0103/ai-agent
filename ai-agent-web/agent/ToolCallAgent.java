@@ -83,7 +83,8 @@ public class ToolCallAgent extends ReActAgent {
             String toolCallInfo = toolCallList.stream()
                     .map(toolCall -> String.format("工具名称: %s, 参数: %s",
                             toolCall.name(),
-                            toolCall.arguments()))
+                            toolCall.arguments()
+                    ))
                     .collect(Collectors.joining("\n"));
             log.info("工具调用信息: \n{}", toolCallInfo);
             if (toolCallList.isEmpty()) {
@@ -95,7 +96,8 @@ public class ToolCallAgent extends ReActAgent {
         } catch (Exception e) {
             log.error("{} 在思考过程遇到了问题: ", e.getMessage());
             getMessagesList().add(
-                    new AssistantMessage("处理时遇到错误: " + e.getMessage()));
+                    new AssistantMessage("处理时遇到错误: " + e.getMessage())
+            );
             return false;
         }
 
@@ -114,14 +116,16 @@ public class ToolCallAgent extends ReActAgent {
         // 调用工具
         Prompt prompt = new Prompt(getMessagesList(), chatOptions);
         ToolExecutionResult toolExecutionResult = toolCallingManager.executeToolCalls(prompt, chatResponse);
+        // 记录消息上下文，conversationHistory 已经包含了助手消息和工具调用返回结果
         setMessagesList(toolExecutionResult.conversationHistory());
         // 当前工具调用结果
-        ToolResponseMessage toolResponseMessage = (ToolResponseMessage) CollUtil
-                .getLast(toolExecutionResult.conversationHistory());
+        ToolResponseMessage toolResponseMessage =
+                (ToolResponseMessage) CollUtil.getLast(toolExecutionResult.conversationHistory());
         String result = toolResponseMessage.getResponses().stream()
                 .map(response -> String.format("工具名称: %s, 结果: %s",
                         response.name(),
-                        response.responseData()))
+                        response.responseData()
+                ))
                 .collect(Collectors.joining("\n"));
         boolean terminateToolCalled = toolResponseMessage.getResponses().stream()
                 .anyMatch(response -> "doTerminate".equals(response.name()));
@@ -141,12 +145,6 @@ public class ToolCallAgent extends ReActAgent {
         ObjectMapper objectMapper = new ObjectMapper();
         CompletableFuture.runAsync(() -> {
             try {
-                // Reset agent state before running
-                if (getState() == AgentState.FINISHED || getState() == AgentState.ERROR) {
-                    setState(AgentState.IDLE);
-                    setCurrentStep(0);
-                }
-
                 if (getState() != AgentState.IDLE) {
                     throw new RuntimeException("Cannot run agent from state: " + getState());
                 }
